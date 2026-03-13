@@ -53,15 +53,21 @@ Opens at `http://localhost:8501`
 - **Auto-Detection** - Compares BSKU vs catalog timestamps
 - **Batch MSID Search** - Look up specific items
 - **CSV/ZIP Export** - Auto-splits files at 45k rows
+- **Photo ID Processing** - Upload photo creation output and generate catalog-ready files
 - **Changelog Tracking** - See who/what updated each item
 
 ## Usage
 
-1. Select merchants from the sidebar
-2. Click "Refresh Data"
-3. Review pending updates
-4. Download CSV/ZIP for bulk upload
-5. Upload to your bulk tool
+**Complete workflow:**
+
+1. Select merchants and refresh data
+2. Download photo URLs (CSV/ZIP)
+3. Upload to photo creation tool → get photo IDs
+4. Upload photo ID CSVs back to dashboard
+5. Download catalog-ready files
+6. Upload to catalog bulk tool
+
+**See [User Guide](USER_GUIDE.md) for detailed step-by-step instructions.**
 
 ## Full Documentation
 

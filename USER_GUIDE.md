@@ -8,6 +8,18 @@
 
 This dashboard helps you identify and export photo URL updates that need to be synced from BSKU to the merchant catalog. It automatically detects items where BSKU has newer photos than what's published in the catalog.
 
+### Complete Workflow
+
+The dashboard supports a complete end-to-end workflow:
+
+1. **Detect updates** - Dashboard finds items where BSKU has newer photos than catalog
+2. **Export URLs** - Download photo URLs that need processing
+3. **Create photo IDs** - Upload URLs to photo creation tool (external)
+4. **Process output** - Upload photo ID results back to dashboard
+5. **Catalog update** - Download catalog-ready files and upload to catalog tool
+
+**Time estimate:** 15-30 minutes depending on number of items
+
 ---
 
 ## Part 1: One-Time Setup (15 minutes)
@@ -265,19 +277,63 @@ businessId,itemMerchantSuppliedId,URL,angle,source
 
 ---
 
-### Step 5: Upload to Bulk Tool
+### Step 5: Create Photo IDs
 
-1. **Go to your bulk upload tool** (ask your team where this is if unsure)
+1. **Go to your photo creation bulk tool** (ask your team where this is if unsure)
 
-2. **Upload the CSV or ZIP file** you just downloaded
+2. **Upload the CSV or ZIP file** you downloaded in Step 4
+   - This tool will create photo IDs for each URL
 
 3. **Wait for processing to complete**
 
-4. **Done!** The items you uploaded won't reappear in the dashboard unless BSKU updates them again
+4. **Download the output CSV files**
+   - The output will include columns like:
+     - `BUSINESS_ID`
+     - `ITEM_MERCHANT_SUPPLIED_ID`
+     - `PHOTO_ID` (this is what you need!)
+     - Other columns (PHOTO_UUID, IMAGE_URL, etc.)
+
+5. **Save these CSV files** - you'll upload them in the next step
 
 ---
 
-### Step 6: Stop the Dashboard
+### Step 6: Process Photo ID Output
+
+**Back in the dashboard, scroll down to "Process Photo ID Output Files" section:**
+
+1. **Click "Browse files"** under the file uploader
+
+2. **Select all CSV files** you downloaded from the photo creation tool
+   - You can select multiple files at once
+   - Hold Ctrl (Windows) or Cmd (Mac) to select multiple
+
+3. **Review the uploaded data:**
+   - Dashboard shows how many files were uploaded
+   - Expand each file to preview the data
+   - See metrics: total rows, duplicates removed, merchant count
+
+4. **Download catalog-ready files:**
+   - Format: `businessId, itemMerchantSuppliedId, photoId`
+   - Automatically splits into files ≤45,001 rows
+   - Single CSV or ZIP with multiple files
+
+---
+
+### Step 7: Upload to Catalog
+
+1. **Go to your catalog bulk tool** (ask your team where this is if unsure)
+
+2. **Upload the catalog-ready CSV or ZIP** you just downloaded
+   - This links the photo IDs to the catalog items
+
+3. **Wait for processing to complete**
+
+4. **Done!** Photo updates are now live in the catalog
+   - Items won't reappear in the dashboard unless BSKU updates them again
+
+---
+
+### Step 8: Stop the Dashboard
 
 **When you're finished:**
 
