@@ -10,35 +10,86 @@ Automated dashboard for managing photo URL updates from BSKU to catalog.
 ✅ **ZIP Download** - Downloads multiple files as a single ZIP
 ✅ **Smart Filtering** - Only shows items where BSKU is newer than catalog
 
-## Setup Instructions
+---
 
-### 1. Install Dependencies
+## Quick Start (5 minutes)
 
+### Prerequisites
+
+- Python 3.8+ installed on your machine
+- Access to DoorDash Snowflake (PRODDB)
+- A Snowflake PAT token (see step 3 below)
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/brian-schwartz-dd/photo-url-update-dashboard.git
+cd photo-url-update-dashboard
+```
+
+### 2. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+Or install individually:
 ```bash
 pip install streamlit snowflake-connector-python pandas
 ```
 
-### 2. Configure Snowflake Credentials
+### 3. Get Your Snowflake PAT Token
 
-Edit the file: `.streamlit/secrets.toml`
+You need a Personal Access Token (PAT) to connect to Snowflake:
 
+1. Go to the **Data Tools PAT Generator** (ask your team for the link, or search Slack for "PAT generator")
+2. Generate a new PAT token
+3. **Copy the token** - you'll need it in the next step
+
+### 4. Create Your Secrets File
+
+Create a file named `.streamlit/secrets.toml` in the project directory:
+
+```bash
+mkdir -p .streamlit
+cat > .streamlit/secrets.toml << 'EOF'
+[snowflake]
+user = "FIRSTNAME.LASTNAME"
+password = "your_PAT_token_here"
+account = "doordash"
+warehouse = "ADHOC"
+database = "PRODDB"
+schema = "static"
+EOF
+```
+
+**Important:** Replace the values:
+- `user` = Your Snowflake username (e.g., `BRIAN.SCHWARTZ`)
+- `password` = The PAT token you generated in step 3
+- `warehouse` = Use `ADHOC` or your team's warehouse name
+
+**Example:**
 ```toml
 [snowflake]
-user = "your_username"
-password = "your_password"
-account = "your_account"       # e.g., "abc12345.us-east-1"
-warehouse = "your_warehouse"   # e.g., "COMPUTE_WH"
-database = "proddb"
+user = "BRIAN.SCHWARTZ"
+password = "ghp_abc123xyz456..."
+account = "doordash"
+warehouse = "ADHOC"
+database = "PRODDB"
 schema = "static"
 ```
 
-### 3. Run the Dashboard
+### 5. Run the Dashboard
 
 ```bash
 streamlit run photo_update_dashboard.py
 ```
 
 The dashboard will open automatically in your browser at `http://localhost:8501`
+
+That's it! You're ready to use the dashboard.
+
+---
 
 ## Daily Workflow
 
@@ -106,20 +157,34 @@ AVAILABLE_MERCHANTS = {
 
 ## Troubleshooting
 
-### "Please select at least one merchant"
-- Make sure you've selected at least one business ID in the sidebar
+### "Connection error" or "Authentication failed"
 
-### "Connection error"
-- Check your `.streamlit/secrets.toml` credentials
-- Verify you have access to the Snowflake database
+**Check your credentials:**
+1. Open `.streamlit/secrets.toml`
+2. Verify your `user` is in format `FIRSTNAME.LASTNAME` (all caps)
+3. Make sure you're using a **PAT token** as the password, not your regular password
+4. Verify `account = "doordash"` (lowercase)
+5. Verify `warehouse = "ADHOC"` or your team's warehouse name
+
+**Generate a new PAT token:**
+- Old tokens may expire - generate a fresh one from the Data Tools PAT generator
+
+### "Please select at least one merchant"
+- Make sure you've selected at least one business ID in the sidebar dropdown
+- Or enter custom business IDs in the text area
 
 ### "No pending updates"
 - This means catalog is up to date with BSKU!
 - New updates will appear when BSKU timestamps are newer than catalog
+- Try selecting different merchants or check back later
 
 ### Dashboard not refreshing
 - Click the "Refresh Data" button in the sidebar
-- Or close and restart the dashboard
+- Or close and restart the dashboard: `Ctrl+C` in terminal, then run `streamlit run photo_update_dashboard.py` again
+
+### "Module not found" errors
+- Make sure you installed all dependencies: `pip install -r requirements.txt`
+- You may need to use `pip3` instead of `pip` depending on your Python setup
 
 ## How It Works
 
@@ -136,4 +201,15 @@ The dashboard compares photo URLs between two sources:
 
 ## Support
 
-For issues or questions, contact your data team.
+**For setup issues:**
+- Check the Troubleshooting section above
+- Verify your Snowflake credentials in `.streamlit/secrets.toml`
+- Make sure you're using a valid PAT token
+
+**For questions about the dashboard:**
+- Contact Brian Schwartz or your team's data lead
+- Check the "How It Works" section below for technical details
+
+**For Snowflake access issues:**
+- Contact your data team or Snowflake admins
+- Verify you have access to `PRODDB` database
