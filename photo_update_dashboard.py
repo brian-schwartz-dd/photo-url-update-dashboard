@@ -406,6 +406,161 @@ else:
     st.info("💡 New updates will appear here when BSKU data changes.")
 
 # ============================================
+# PHOTO ID UPLOAD & PROCESSING
+# ============================================
+st.markdown("---")
+st.header("📤 Process Photo ID Output Files")
+st.markdown("""
+Upload the CSV files you received after creating photo IDs in the bulk tool.
+This will generate catalog-ready files with format: `businessId, itemMerchantSuppliedId, photoId`
+""")
+
+uploaded_files = st.file_uploader(
+    "Upload Photo ID CSV files (multiple files allowed):",
+    type=['csv'],
+    accept_multiple_files=True,
+    help="Select all CSV files containing photo IDs from the bulk tool output"
+)
+
+if uploaded_files:
+    st.success(f"✅ {len(uploaded_files)} file(s) uploaded")
+
+    # Process all uploaded files
+    all_photo_ids = []
+
+    for uploaded_file in uploaded_files:
+        try:
+            df_upload = pd.read_csv(uploaded_file)
+
+            # Display file info
+            with st.expander(f"📄 {uploaded_file.name} ({len(df_upload):,} rows)"):
+                st.dataframe(df_upload.head(10), use_container_width=True, hide_index=True)
+
+            # Extract the three required columns
+            # Try to find columns with flexible naming
+            business_id_col = None
+            msid_col = None
+            photo_id_col = None
+
+            for col in df_upload.columns:
+                col_lower = col.lower().replace('_', '').replace(' ', '')
+                if 'businessid' in col_lower:
+                    business_id_col = col
+                elif 'itemmerchant' in col_lower or 'msid' in col_lower:
+                    msid_col = col
+                elif 'photoid' in col_lower:
+                    photo_id_col = col
+
+            if not all([business_id_col, msid_col, photo_id_col]):
+                st.error(f"❌ {uploaded_file.name}: Could not find required columns (businessId, itemMerchantSuppliedId, photoId)")
+                continue
+
+            # Extract and standardize
+            df_extract = df_upload[[business_id_col, msid_col, photo_id_col]].copy()
+            df_extract.columns = ['businessId', 'itemMerchantSuppliedId', 'photoId']
+
+            # Remove any rows with missing values
+            df_extract = df_extract.dropna()
+
+            all_photo_ids.append(df_extract)
+
+        except Exception as e:
+            st.error(f"❌ Error processing {uploaded_file.name}: {str(e)}")
+
+    if all_photo_ids:
+        # Combine all uploaded files
+        combined_df = pd.concat(all_photo_ids, ignore_index=True)
+
+        # Remove duplicates (keep first occurrence)
+        original_count = len(combined_df)
+        combined_df = combined_df.drop_duplicates(subset=['businessId', 'itemMerchantSuppliedId'], keep='first')
+        duplicates_removed = original_count - len(combined_df)
+
+        st.markdown("---")
+        st.subheader("📊 Combined Photo ID Data")
+
+        col_info1, col_info2, col_info3 = st.columns(3)
+        with col_info1:
+            st.metric("Total Rows", f"{len(combined_df):,}")
+        with col_info2:
+            st.metric("Duplicates Removed", f"{duplicates_removed:,}")
+        with col_info3:
+            st.metric("Merchants", len(combined_df['businessId'].unique()))
+
+        # Preview combined data
+        with st.expander("👁️ Preview Combined Data"):
+            st.dataframe(combined_df.head(20), use_container_width=True, hide_index=True)
+
+        # Download section
+        st.markdown("---")
+        st.subheader("⬇️ Download Catalog-Ready Files")
+
+        total_rows = len(combined_df)
+        num_files = (total_rows // MAX_ROWS_PER_FILE) + (1 if total_rows % MAX_ROWS_PER_FILE > 0 else 0)
+
+        st.info(f"📦 Will generate {num_files} file(s) for {total_rows:,} rows (max {MAX_ROWS_PER_FILE:,} rows per file)")
+
+        col_dl1, col_dl2 = st.columns(2)
+
+        with col_dl1:
+            if num_files == 1:
+                # Single file download
+                csv_buffer = io.StringIO()
+                combined_df.to_csv(csv_buffer, index=False)
+                csv_data = csv_buffer.getvalue()
+
+                st.download_button(
+                    label=f"📥 Download CSV ({total_rows:,} rows)",
+                    data=csv_data,
+                    file_name=f"photo_ids_catalog_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                    type="primary",
+                    use_container_width=True
+                )
+            else:
+                # Multiple files - create ZIP
+                zip_buffer = io.BytesIO()
+
+                with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                    for i in range(num_files):
+                        start_idx = i * MAX_ROWS_PER_FILE
+                        end_idx = min((i + 1) * MAX_ROWS_PER_FILE, total_rows)
+
+                        chunk_df = combined_df.iloc[start_idx:end_idx]
+
+                        csv_buffer = io.StringIO()
+                        chunk_df.to_csv(csv_buffer, index=False)
+                        csv_data = csv_buffer.getvalue()
+
+                        filename = f"photo_ids_catalog_part{i+1}_of_{num_files}.csv"
+                        zip_file.writestr(filename, csv_data)
+
+                zip_data = zip_buffer.getvalue()
+
+                st.download_button(
+                    label=f"📦 Download ZIP ({num_files} files, {total_rows:,} rows)",
+                    data=zip_data,
+                    file_name=f"photo_ids_catalog_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                    mime="application/zip",
+                    type="primary",
+                    use_container_width=True
+                )
+
+        with col_dl2:
+            st.info("""
+            **Next steps:**
+            1. Download the CSV/ZIP file
+            2. Upload to catalog bulk tool
+            3. Photo IDs will be linked to items
+            """)
+
+        st.markdown("---")
+        st.success("✅ Files are ready! Upload to catalog bulk tool to complete the photo update process.")
+
+else:
+    st.info("👆 Upload photo ID CSV files above to process them for catalog upload")
+
+# ============================================
 # FOOTER
 # ============================================
 st.markdown("---")
