@@ -120,6 +120,54 @@ msid_filter_list = []
 if specific_msids:
     msid_filter_list = [msid.strip() for msid in specific_msids.split('\n') if msid.strip()]
 
+# Date/Time Filtering
+st.sidebar.markdown("---")
+st.sidebar.subheader("📅 Date Filters")
+
+# BSKU Update Date Filter
+bsku_date_filter = st.sidebar.selectbox(
+    "BSKU Updated:",
+    options=["All time", "Last 7 days", "Last 30 days", "Last 90 days", "Custom range"],
+    help="Filter items by when BSKU was last updated"
+)
+
+bsku_start_date = None
+bsku_end_date = None
+if bsku_date_filter == "Custom range":
+    col_date1, col_date2 = st.sidebar.columns(2)
+    with col_date1:
+        bsku_start_date = st.date_input("From:", value=None)
+    with col_date2:
+        bsku_end_date = st.date_input("To:", value=None)
+
+# Catalog Update Date Filter
+catalog_date_filter = st.sidebar.selectbox(
+    "Catalog Updated:",
+    options=["Any time", "Last 7 days", "Last 30 days", "Last 90 days", "Never updated", "Custom range"],
+    help="Filter items by when catalog was last updated"
+)
+
+catalog_start_date = None
+catalog_end_date = None
+if catalog_date_filter == "Custom range":
+    col_date3, col_date4 = st.sidebar.columns(2)
+    with col_date3:
+        catalog_start_date = st.date_input("Cat From:", value=None, key="cat_from")
+    with col_date4:
+        catalog_end_date = st.date_input("Cat To:", value=None, key="cat_to")
+
+# Days Pending Filter
+days_pending_filter = st.sidebar.slider(
+    "Max days pending:",
+    min_value=0,
+    max_value=365,
+    value=365,
+    step=1,
+    help="Only show items pending for up to this many days (0 = no limit)"
+)
+if days_pending_filter == 0:
+    days_pending_filter = None
+
 # ============================================
 # QUERY PENDING UPDATES
 # ============================================
@@ -129,7 +177,8 @@ if st.sidebar.button("🔄 Refresh Data", type="primary"):
     st.rerun()
 
 @st.cache_data(ttl=300)  # Cache for 5 minutes
-def get_pending_updates(merchant_list, msid_filter=None):
+def get_pending_updates(merchant_list, msid_filter=None, bsku_date_filter=None, bsku_start=None, bsku_end=None,
+                       catalog_date_filter=None, catalog_start=None, catalog_end=None, max_days_pending=None):
     """Get pending photo updates for selected merchants"""
     merchant_ids = "', '".join(merchant_list)
 
@@ -138,6 +187,35 @@ def get_pending_updates(merchant_list, msid_filter=None):
     if msid_filter and len(msid_filter) > 0:
         msid_list = "', '".join(msid_filter)
         msid_filter_clause = f"AND merchant_supplied_item_id IN ('{msid_list}')"
+
+    # Build BSKU date filter
+    bsku_date_clause = ""
+    if bsku_date_filter == "Last 7 days":
+        bsku_date_clause = "AND updated_at >= DATEADD('day', -7, CURRENT_TIMESTAMP)"
+    elif bsku_date_filter == "Last 30 days":
+        bsku_date_clause = "AND updated_at >= DATEADD('day', -30, CURRENT_TIMESTAMP)"
+    elif bsku_date_filter == "Last 90 days":
+        bsku_date_clause = "AND updated_at >= DATEADD('day', -90, CURRENT_TIMESTAMP)"
+    elif bsku_date_filter == "Custom range" and bsku_start and bsku_end:
+        bsku_date_clause = f"AND updated_at BETWEEN '{bsku_start}' AND '{bsku_end}'"
+
+    # Build catalog date filter (applied in final WHERE clause)
+    catalog_date_clause = ""
+    if catalog_date_filter == "Last 7 days":
+        catalog_date_clause = "AND c.catalog_updated_at >= DATEADD('day', -7, CURRENT_TIMESTAMP)"
+    elif catalog_date_filter == "Last 30 days":
+        catalog_date_clause = "AND c.catalog_updated_at >= DATEADD('day', -30, CURRENT_TIMESTAMP)"
+    elif catalog_date_filter == "Last 90 days":
+        catalog_date_clause = "AND c.catalog_updated_at >= DATEADD('day', -90, CURRENT_TIMESTAMP)"
+    elif catalog_date_filter == "Never updated":
+        catalog_date_clause = "AND c.catalog_updated_at IS NULL"
+    elif catalog_date_filter == "Custom range" and catalog_start and catalog_end:
+        catalog_date_clause = f"AND c.catalog_updated_at BETWEEN '{catalog_start}' AND '{catalog_end}'"
+
+    # Build days pending filter
+    days_pending_clause = ""
+    if max_days_pending is not None:
+        days_pending_clause = f"AND DATEDIFF('day', b.updated_at, CURRENT_TIMESTAMP) <= {max_days_pending}"
 
     query = f"""
     WITH bsku_current AS (
@@ -165,6 +243,7 @@ def get_pending_updates(merchant_list, msid_filter=None):
           AND TRIM(JSON_EXTRACT_PATH_TEXT(attributes, 'product.imageUrl')) != ''
           AND JSON_EXTRACT_PATH_TEXT(attributes, 'product.imageUrl') != 'default_image_url'
           {msid_filter_clause}
+          {bsku_date_clause}
       )
       WHERE rn = 1
     ),
@@ -193,7 +272,7 @@ def get_pending_updates(merchant_list, msid_filter=None):
       WHERE rn = 1
     )
 
-    SELECT
+    SELECT DISTINCT
       b.business_id,
       b.merchant_supplied_item_id,
       b.business_msid,
@@ -229,7 +308,14 @@ def get_pending_updates(merchant_list, msid_filter=None):
       ON b.business_msid = c.business_msid
     LEFT JOIN proddb.public.dimension_users u
       ON c.catalog_updated_by = u.user_id
-    WHERE change_type IN ('NEW_ITEM', 'URL_CHANGED')
+    WHERE 1=1
+      AND (
+        (c.business_msid IS NULL) OR
+        (COALESCE(TRIM(b.bsku_photo_url), '') != COALESCE(TRIM(c.catalog_photo_url), '')
+         AND b.updated_at > COALESCE(c.catalog_updated_at, '1900-01-01'))
+      )
+      {catalog_date_clause}
+      {days_pending_clause}
     ORDER BY b.updated_at DESC, b.business_msid
     """
 
@@ -237,7 +323,17 @@ def get_pending_updates(merchant_list, msid_filter=None):
 
 # Load data
 with st.spinner("🔍 Querying pending photo updates..."):
-    df = get_pending_updates(selected_merchants, msid_filter_list)
+    df = get_pending_updates(
+        selected_merchants,
+        msid_filter_list,
+        bsku_date_filter,
+        bsku_start_date,
+        bsku_end_date,
+        catalog_date_filter,
+        catalog_start_date,
+        catalog_end_date,
+        days_pending_filter
+    )
 
 # ============================================
 # METRICS DISPLAY
