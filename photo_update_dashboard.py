@@ -171,13 +171,26 @@ def get_pending_updates(merchant_list, msid_filter=None):
 
     catalog_current AS (
       SELECT
-        CONCAT(business_id, '_', item_merchant_supplied_id) AS business_msid,
-        photo_url AS catalog_photo_url,
-        mpc_updated_at AS catalog_updated_at,
-        mpc_updated_by AS catalog_updated_by,
+        business_msid,
+        catalog_photo_url,
+        catalog_updated_at,
+        catalog_updated_by,
         item_name
-      FROM x360.prod.merchant_catalog
-      WHERE business_id IN ('{merchant_ids}')
+      FROM (
+        SELECT
+          CONCAT(business_id, '_', item_merchant_supplied_id) AS business_msid,
+          photo_url AS catalog_photo_url,
+          mpc_updated_at AS catalog_updated_at,
+          mpc_updated_by AS catalog_updated_by,
+          item_name,
+          ROW_NUMBER() OVER (
+            PARTITION BY business_id, item_merchant_supplied_id
+            ORDER BY mpc_updated_at DESC NULLS LAST
+          ) AS rn
+        FROM x360.prod.merchant_catalog
+        WHERE business_id IN ('{merchant_ids}')
+      )
+      WHERE rn = 1
     )
 
     SELECT
