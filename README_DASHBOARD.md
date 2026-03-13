@@ -38,13 +38,54 @@ Or install individually:
 pip install streamlit snowflake-connector-python pandas
 ```
 
-### 3. Get Your Snowflake PAT Token
+### 3. Get Your Snowflake Credentials
 
-You need a Personal Access Token (PAT) to connect to Snowflake:
+You need several pieces of information to connect to Snowflake. Here's how to get each one:
 
-1. Go to the **Data Tools PAT Generator** (ask your team for the link, or search Slack for "PAT generator")
-2. Generate a new PAT token
-3. **Copy the token** - you'll need it in the next step
+#### A. Your Snowflake Username
+
+Your username is typically your email prefix in this format: `FIRSTNAME.LASTNAME` (all uppercase)
+
+**Example:** If your email is `brian.schwartz@doordash.com`, your username is `BRIAN.SCHWARTZ`
+
+Not sure? Check with your team or try logging into Snowflake Web UI at: [https://doordash.snowflakecomputing.com](https://doordash.snowflakecomputing.com)
+
+#### B. Get Your PAT Token (Password)
+
+You need a Personal Access Token (PAT) instead of a regular password:
+
+1. **Find the PAT Generator:**
+   - Search in Slack for "PAT generator" or "Data Tools PAT"
+   - Or ask your team: "Where's the Data Tools PAT generator?"
+   - Common internal tool URLs might be `pat.doordash.tools` or similar
+
+2. **Generate a new token:**
+   - Click "Generate new token" or similar button
+   - Give it a name like "photo-dashboard"
+   - Set expiration (90 days is common)
+   - Copy the token immediately - it starts with something like `ghp_` or similar
+
+3. **Save the token** - you'll need it in the next step
+
+#### C. Your Warehouse Name
+
+Most users should use: **`ADHOC`**
+
+If your team has a dedicated warehouse, ask your manager or data lead. Common names:
+- `ADHOC` (default for ad-hoc queries)
+- `COMPUTE_WH` (standard compute)
+- Team-specific warehouses like `ANALYTICS_WH`, `OPERATIONS_WH`, etc.
+
+Not sure? Start with `ADHOC` - it usually works.
+
+#### D. Account, Database, and Schema
+
+These are standard for DoorDash:
+- **Account:** `doordash` (lowercase)
+- **Database:** `PRODDB`
+- **Schema:** `static`
+
+You typically don't need to change these.
 
 ### 4. Create Your Secrets File
 
@@ -161,13 +202,20 @@ AVAILABLE_MERCHANTS = {
 
 **Check your credentials:**
 1. Open `.streamlit/secrets.toml`
-2. Verify your `user` is in format `FIRSTNAME.LASTNAME` (all caps)
+2. Verify your `user` is in format `FIRSTNAME.LASTNAME` (all caps, with a period)
 3. Make sure you're using a **PAT token** as the password, not your regular password
-4. Verify `account = "doordash"` (lowercase)
-5. Verify `warehouse = "ADHOC"` or your team's warehouse name
+4. Verify `account = "doordash"` (lowercase, no hyphens or extra text)
+5. Verify `warehouse = "ADHOC"` or your team's warehouse name (all caps)
 
 **Generate a new PAT token:**
 - Old tokens may expire - generate a fresh one from the Data Tools PAT generator
+- The token should start with `ghp_` or similar prefix
+- Make sure you copied the entire token (they're usually quite long)
+
+**Still not working?**
+- Try logging into Snowflake Web UI first: [https://doordash.snowflakecomputing.com](https://doordash.snowflakecomputing.com)
+- This confirms your username and that you have Snowflake access
+- Ask in your team's Slack channel for help with PAT tokens
 
 ### "Please select at least one merchant"
 - Make sure you've selected at least one business ID in the sidebar dropdown
@@ -185,6 +233,22 @@ AVAILABLE_MERCHANTS = {
 ### "Module not found" errors
 - Make sure you installed all dependencies: `pip install -r requirements.txt`
 - You may need to use `pip3` instead of `pip` depending on your Python setup
+
+### "I can't find the PAT generator"
+- Search in Slack: Try searching for "PAT generator", "Data Tools PAT", or "Snowflake token"
+- Ask your team: "Where do I get a Snowflake PAT token?"
+- Check internal docs: Look for "Snowflake" or "Data Tools" in your company's internal documentation
+- Alternative: Some teams use a different auth method - ask your data lead what's used on your team
+
+### "I don't know my Snowflake username"
+- It's usually your email prefix: `FIRSTNAME.LASTNAME` (e.g., `BRIAN.SCHWARTZ`)
+- Try logging into [https://doordash.snowflakecomputing.com](https://doordash.snowflakecomputing.com) to verify
+- Check with your team if you're still unsure
+
+### "I don't know which warehouse to use"
+- Start with `ADHOC` - this works for most users
+- If that doesn't work, ask your manager or data team lead
+- Your team might have a dedicated warehouse
 
 ## How It Works
 
