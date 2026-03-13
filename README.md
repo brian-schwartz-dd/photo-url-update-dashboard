@@ -51,6 +51,7 @@ Opens at `http://localhost:8501`
 
 - **21 Pre-configured Merchants** - Quick selection dropdown
 - **Auto-Detection** - Compares BSKU vs catalog timestamps
+- **Advanced Date Filtering** - Filter by BSKU update date, catalog update date, or days pending
 - **Batch MSID Search** - Look up specific items
 - **CSV/ZIP Export** - Auto-splits files at 45k rows
 - **Photo ID Processing** - Upload photo creation output and generate catalog-ready files

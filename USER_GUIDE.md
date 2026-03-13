@@ -210,7 +210,18 @@ The dashboard will open in your browser at `http://localhost:8501`
    - Enter Merchant Supplied Item IDs, one per line
    - Leave blank to see all items
 
-4. **Click "Refresh Data"** to load the latest information
+4. **OPTIONAL - Filter by date:**
+   - **BSKU Updated:** Filter items by when BSKU was last updated
+     - Options: All time, Last 7/30/90 days, Custom range
+     - Default: "All time" (shows all pending updates)
+   - **Catalog Updated:** Filter items by when catalog was last updated
+     - Options: Any time, Last 7/30/90 days, Never updated, Custom range
+     - Default: "Any time"
+   - **Max days pending:** Slider to limit how old updates can be
+     - Set to 365 (default) to see all pending items
+     - Lower values show only recent updates
+
+5. **Click "Refresh Data"** to load the latest information
 
 ---
 
@@ -508,6 +519,39 @@ streamlit run photo_update_dashboard.py
 **Example use case:**
 - Partner sends you a list of 50 items to check
 - Paste the MSIDs instead of scrolling through thousands of rows
+
+---
+
+### Using Date Filters Effectively
+
+**Common scenarios:**
+
+**Daily updates (recommended):**
+- BSKU Updated: "Last 7 days"
+- Catalog Updated: "Any time"
+- Max days pending: 365 (no limit)
+- Shows: Recent BSKU changes that need updating
+
+**Backlog cleanup:**
+- BSKU Updated: "All time"
+- Catalog Updated: "Any time"
+- Max days pending: Adjust based on priority (e.g., 30 days for urgent items)
+- Shows: All pending updates, oldest first
+
+**Never-updated items:**
+- BSKU Updated: "All time"
+- Catalog Updated: "Never updated"
+- Shows: Items in BSKU but never published to catalog
+
+**Recent catalog updates:**
+- BSKU Updated: "All time"
+- Catalog Updated: "Last 7 days"
+- Shows: Items where catalog was recently updated but BSKU is still newer
+
+**Custom date ranges:**
+- Use "Custom range" for both filters
+- Select specific start and end dates
+- Useful for investigating issues during a specific timeframe
 
 ---
 
