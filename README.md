@@ -9,6 +9,8 @@ Streamlit dashboard for managing photo URL updates from BSKU to catalog.
 
 Automatically detects photo URL updates that need to be synced from BSKU to the merchant catalog, and exports them in a format ready for bulk upload.
 
+**📖 New to this tool? Start here:** [Complete User Guide](USER_GUIDE.md) - Step-by-step instructions from setup to daily use.
+
 ## Quick Start
 
 ### 1. Clone and Install
@@ -70,6 +72,12 @@ See [README_DASHBOARD.md](README_DASHBOARD.md) for complete setup instructions, 
 - Python 3.8+
 - Snowflake access (PRODDB)
 - PAT token from Data Tools
+
+## Documentation
+
+- **[User Guide](USER_GUIDE.md)** - Complete walkthrough for first-time users
+- **[Technical README](README_DASHBOARD.md)** - Detailed setup, configuration, and troubleshooting
+- **[GitHub Repository](https://github.com/brian-schwartz-dd/photo-url-update-dashboard)** - Code and issues
 
 ## Support
 
